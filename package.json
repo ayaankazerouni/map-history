@@ -1,0 +1,19 @@
+{
+  "name": "map-history",
+  "type": "module",
+  "version": "1.0.0",
+  "main": "event-scraper.ts",
+  "scripts": {
+    "start": "npx tsx event-scraper.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@types/cheerio": "^0.22.35",
+    "cheerio": "^1.0.0-rc.12"
+  },
+  "devDependencies": {
+    "tsx": "^4.10.5"
+  }
+}
