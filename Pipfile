@@ -6,9 +6,10 @@ name = "pypi"
 [packages]
 beautifulsoup4 = "==4.12.3"
 pandas = "*"
+ipykernel = "*"
 
 [dev-packages]
 ipykernel = "*"
 
 [requires]
-python_version = "3.10"
+python_version = "3.12"
