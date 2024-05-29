@@ -62,7 +62,7 @@ def get_events_on_day(month: str, day: int) -> list[bs4.Tag]:
 
     return total_wiki_calls, events_on_day 
 
-def get_events_with_locations(event: bs4.Tag) -> dict:
+def get_events_with_locations(event: bs4.Tag) -> list[dict]:
     """
     Given a list item from the Wikipedia page, extract the year, event description, and any coordinates from the event.
     """
