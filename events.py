@@ -57,7 +57,12 @@ def get_events_on_day(month: str, day: int) -> list[bs4.Tag]:
             citation.decompose()
 
         wiki_calls, events = get_events_with_locations(list_item)
-        events_on_day.extend(events)
+
+        # Add the month and day to each event object and append to the list
+        events_on_day.extend(
+            map(lambda x: {**x, 'month': month, 'day': day}, events)
+        )
+        
         total_wiki_calls += wiki_calls
 
     return total_wiki_calls, events_on_day 
@@ -124,8 +129,6 @@ def get_wikilink_coordinates(ref: bs4.element.Tag):
     try:
         response = request.urlopen(url) # Expecting a JSON response
     except HTTPError as e:
-        if e.code == 404:
-            print(f"Page not found: {page_title}. Failed to get coordinates.")
         return None
 
     if response is None or response.status != 200:
