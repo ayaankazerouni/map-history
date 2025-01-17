@@ -32,6 +32,33 @@ class Event(TypedDict, total=False):
     longitude: float
     latitude: float
 
+def get_event_items(soup: bs4.BeautifulSoup) -> list[bs4.Tag]:
+    """
+    Get all <li> events whose text matches `EVENT_RE` and that
+    occur between the "Events" and "Births" `<h2>` tags.
+
+    Params:
+        - soup: BeautifulSoup object obtained by parsing the HTML page.
+    
+    Returns a list of Tags
+    """
+    events_header = soup.find('h2', id='Events')
+    events_parent = events_header.find_parent() if events_header is not None else None
+    births_header = soup.find('h2', id='Births')
+    births_parent = births_header.find_parent() if births_header is not None else None
+
+    if (events_parent and births_parent):
+        elements = _get_event_items_between([], events_parent, births_parent)
+        return elements
+    return []
+
+def _get_event_items_between(elements: list[bs4.Tag], start,  stop) -> list[bs4.Tag]:
+    if (start.next_sibling == stop):
+        return elements
+    elif (start.name == 'li' and EVENT_RE.match(start.text)):
+        elements.append(start)
+    return _get_event_items_between(elements, start.next, stop)
+
 def get_events_on_day(month: str, day: int) -> tuple[int, list[bs4.Tag]]:
     """
     Get the events that are listed on the Wikipedia page for the given month and day.
@@ -50,22 +77,12 @@ def get_events_on_day(month: str, day: int) -> tuple[int, list[bs4.Tag]]:
     response = request.urlopen(url).read()
     soup = bs4.BeautifulSoup(response, 'html.parser')
 
-    # Remove everything that appears after the "Births" h2 span
-    birth_span = soup.find('span', id='Births')
-    if birth_span:
-        births_onward = birth_span.find_parent('h2')
-        if (births_onward):
-            for event in births_onward.find_all_next():
-                # Ignore the type error because it is wrong — event is a Tag with a decompose method 
-                event.decompose() # type: ignore
-    
-    all_list_items = soup.select('.mw-parser-output ul li')
-    event_items = list(filter(lambda x: EVENT_RE.match(x.text), all_list_items))
+    event_list_items = get_event_items(soup)
 
     events_on_day = []
 
     total_wiki_calls = 1 # The initial call to the main page
-    for list_item in event_items:
+    for list_item in event_list_items:
         # Remove the citation from the list item
         citations = list_item.find_all('sup')
         for citation in citations:
