@@ -1,46 +1,59 @@
-# World Events 
+# Map history
 
-Scrape historical events from English Wikipedia. Data is used in a little project I played around with for fun: [https://observablehq.com/@ayaankazerouni/map-history](https://observablehq.com/@ayaankazerouni/map-history).
-
-## Overview 
-
-Use BeautifulSoup to inspect "on this day" pages on English Wikipedia.
-See the page on [January 1](https://en.wikipedia.org/wiki/January_1) as an example.
-The page contains a list of events that occurred on January 1 throughout history[^1].
-
-[^1]: There are many limitations to this method of obtaining event data.
-
-The `get_events_on_day` function in [events.py](events.py) inspects all items under the **Events** subheading in the Wikipedia page, and attempts to assemble a record that looks like this:
+This is an [Observable Framework](https://observablehq.com/framework/) app. To install the required dependencies, run:
 
 ```
-{
-  'year': number, # negative for years in BC
-  'month': string,
-  'day': number,
-  'longitude' number,
-  'latitude': number,
-  'description': string, # An HTML string
-}
+yarn install
 ```
 
-Each list item in the **Events** subsection includes a brief description, which often contains links to other Wikipedia pages.
-The function will inspect the info boxes in _those_ Wikipedia pages, looking for coordinates (nominally, the "location" of the event). If the event description contains references to multiple linked locations, the function emits an event for each location.
+Then, to start the local preview server, run:
 
-## Caveats
+```
+yarn dev
+```
 
-- Not all listed events in the Wikipedia page will result in an event object being emitted. For example, if there was no location identified for the event (since the goal was to plot events on a map).
-- Scraping the English Wikipedia means that data is very skewed to European history. Events in other continents tend to appear when Europeans reached those other continents. Consider other sources of data, perhaps non-English Wikipedia.
-- Many events may not have recorded exact dates with the month and day, so they wouldn't show up here, English Wikipedia or no.
+Then visit <http://localhost:3000> to preview your app.
 
-## Installation and usage
+For more, see <https://observablehq.com/framework/getting-started>.
 
-1. Install Python and [Pipenv](https://pipenv.pypa.io/en/latest/).
-2. Clone this repository.
-3. `cd world-events`
-4. `pipenv install` to install dependencies from `Pipenv.lock`
+## Project structure
 
-Begin looking for events by importing the `get_events_on_day` function.
+A typical Framework project looks like this:
 
-Scraped events as of October 25, 2024 are in `events-by-month`.
-Each file corresponds to a month.
+```ini
+.
+├─ src
+│  ├─ components
+│  │  └─ timeline.js           # an importable module
+│  ├─ data
+│  │  ├─ launches.csv.js       # a data loader
+│  │  └─ events.json           # a static data file
+│  ├─ example-dashboard.md     # a page
+│  ├─ example-report.md        # another page
+│  └─ index.md                 # the home page
+├─ .gitignore
+├─ observablehq.config.js      # the app config file
+├─ package.json
+└─ README.md
+```
 
+**`src`** - This is the “source root” — where your source files live. Pages go here. Each page is a Markdown file. Observable Framework uses [file-based routing](https://observablehq.com/framework/project-structure#routing), which means that the name of the file controls where the page is served. You can create as many pages as you like. Use folders to organize your pages.
+
+**`src/index.md`** - This is the home page for your app. You can have as many additional pages as you’d like, but you should always have a home page, too.
+
+**`src/data`** - You can put [data loaders](https://observablehq.com/framework/data-loaders) or static data files anywhere in your source root, but we recommend putting them here.
+
+**`src/components`** - You can put shared [JavaScript modules](https://observablehq.com/framework/imports) anywhere in your source root, but we recommend putting them here. This helps you pull code out of Markdown files and into JavaScript modules, making it easier to reuse code across pages, write tests and run linters, and even share code with vanilla web applications.
+
+**`observablehq.config.js`** - This is the [app configuration](https://observablehq.com/framework/config) file, such as the pages and sections in the sidebar navigation, and the app’s title.
+
+## Command reference
+
+| Command           | Description                                              |
+| ----------------- | -------------------------------------------------------- |
+| `yarn install`            | Install or reinstall dependencies                        |
+| `yarn dev`        | Start local preview server                               |
+| `yarn build`      | Build your static site, generating `./dist`              |
+| `yarn deploy`     | Deploy your app to Observable                            |
+| `yarn clean`      | Clear the local data loader cache                        |
+| `yarn observable` | Run commands like `observable help`                      |
