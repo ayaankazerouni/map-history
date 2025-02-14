@@ -42,5 +42,3 @@ Assuming you've cloned the repository and are in the `map-history` folder:
 
 - `yarn` to install dependencies
 - `yarn dev` to build and run a local server at `https://localhost:3000`
-
-Right now it is a direct conversion of the [Observable Notebook](https://observablehq.com/@ayaankazerouni/map-history) that I originally started with, so the code is all in one place and can certainly be organised better.

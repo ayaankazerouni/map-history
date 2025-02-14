@@ -1,12 +1,15 @@
 # About
 
+<small>
+
 > _I mean the Vikings were cool and all, but some of y'all just way too obsessed with them, there was some srsly banger  shit happening around the world at the exact same time that was at least as interesting if not more_
 > 
 > – [Shiv Ramdas](http://shivramdas.net/) on [BlueSky](https://bsky.app/profile/nameshiv.bsky.social/post/3ldvpyw2z7k2r)
 
+</small>
+
 This "map of history" was a fun little side project for me.
 I wanted to be able to think about simultaneous events in human history that I wouldn't expect to be contemporary.
-The BlueSky post I quoted above seems to agree!
 
 So I tried to explore the idea with a bit of data visualisation.
 

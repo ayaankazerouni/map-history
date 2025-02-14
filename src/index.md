@@ -1,6 +1,4 @@
 # Map history
-<small>See [this GitHub repo](https://github.com/ayaankazerouni/world-events) to see how event data was obtained, plus some limitations.</small>
----
 
 <small>
 Hover over points on the map to see event descriptions (sourced from Wikipedia's "on this day" pages).
@@ -12,37 +10,28 @@ Hover over points on the map to see event descriptions (sourced from Wikipedia's
 * <kbd>Ctrl/Cmd + click</kbd> to move/pan
 * <kbd>Double-click</kbd> to reset.
 
+Multiple selections will also include all events in between those year ranges.
 </small>
 
----
-
-<style>
-  .tippy-content {
-    font-size: 0.8em;
-    border: 1pt solid black;
-    border-radius: 5px;
-    background-color: var(--theme-background);
-    padding: 10px;
-  }
-</style>
-
-<small>Multiple selections will also include all events in between those year ranges.</small>
-
 ```js
-const ranges = view(Inputs.checkbox(
-  [ "Pre-1600", "1600-1899", "1900-1949", "1950-1999", "2000-2024" ],
-  {
-    value: "1600-1899",
-    valueof: el => ({
-      "Pre-1600": { start: -1500, end: 1600 },
-      "1600-1899": { start: 1600, end: 1899 },
-      "1900-1949": { start: 1900, end: 1940 },
-      "1950-1999": { start: 1950, end: 1999 },
-      "2000-2024": { start: 2000, end: 2025 }
-    }[el]),
-    disabled: !!searchTerms.length,
-  }
-));
+const options = {
+  "BC": { start: -1500, end: -1 },
+  "1-1600 AD": { start: 0, end: 1599 },
+  "1600-1899 AD": { start: 1600, end: 1899 },
+  "1900-1949 AD": { start: 1900, end: 1940 },
+  "1950-1999 AD": { start: 1950, end: 1999 },
+  "2000-2024 AD": { start: 2000, end: 2025 }
+};
+const ranges = view(
+  Inputs.checkbox(
+    Object.keys(options),
+    {
+      value: "1600-1899 AD",
+      valueof: el => (options[el]),
+      disabled: !!searchTerms.length,
+    }
+  )
+);
 ```
 
 ```js
@@ -61,7 +50,7 @@ const legend = Plot.legend({
   color: yearColorScale,
   domain: d3.extent(eventsToDraw.map(e => e.year)),
   width: legendWidth,
-  tickFormat: yearFormat,
+  tickFormat: formatYear,
   marginLeft: marginLeft,
   label: (ranges.length || searchTerms) ? '' : 'Select a year range or type a search term to see events.'
 })
@@ -124,8 +113,7 @@ d3.select(map).select('.datapoint')
 
     // Apply tippy to the DOM element to attach groovy tooltips
     tippy(this, {
-      content: tipText(title),
-      // theme: "light-border",
+      content: tipText(title, eventsToDraw),
       allowHTML: true,
       interactive: true,
       appendTo: () => document.body
@@ -169,87 +157,28 @@ const yearColorScale = Plot.scale({
 ```
 
 ```js
-function stripHtml(element) {
-  let tmp = document.createElement('div');
-  tmp.innerHTML = element;
-  return tmp.innerText || "";
-}
-```
-
-```js
-// This function accepts a city name and generates the tooltip.
-// It should return raw HTML code.
-function tipText(description) {
-  const d = events.filter((e) => e.description == description)[0];
-  const year = `${Math.abs(d.year)} ${d.year < 0 ? 'BC' : 'AD'}`;
-  return `<h4>${d.day} ${d.month}, ${year}</h4> ${d.description}`;
-}
-```
-
-```js
-function set(input, value) {
-  input.value = value;
-  input.dispatchEvent(new Event("input"), {bubbles: true})
-}
-```
-
-```js
-function yearFormat(year) {
-  return `${Math.abs(year)} ${year < 0 ? 'BC' : 'AD'}`;
-}
-```
-
-```js
-const events = await FileAttachment('data/events.json').json();
-```
-
-```js
-const start = Math.min(...ranges.map(e => e.start));
-const end = Math.max(...ranges.map(e => e.end));
-const eventsToDraw = searchTerms.length === 0 ?
-  events.filter(e => e.year >= start && e.year <= end) : 
-  events.filter(e => tokenize(searchTerms).some(t => stripHtml(e.description).includes(t)));
-```
-
-```js
-function tokenize(input) {
-    const regex = /"([^"]*)"|\S+/g;
-    let match;
-    const tokens = [];
-  
-    while ((match = regex.exec(input)) !== null) {
-        // If content was quoted, add the capture group to the list.
-        // Otherwise, add the match as is.
-        tokens.push(match[1] ? match[1] : match[0]);
-    }
-  
-    return tokens;
-}
-
-```
-
-```js
 const world = await FileAttachment("data/land-50m.json").json();
 const land = topojson.feature(world, world.objects.land);
+const events = await FileAttachment('data/events.json').json();
+const eventsToDraw = filteredEvents(events, searchTerms, ranges);
 ```
 
 ```js
 import tippy from 'npm:tippy.js@6';
+import {
+  stripHtml,
+  filteredEvents,
+  formatYear,
+  tipText
+} from './components/lib.js'
 ```
 
-```js
-function calculateStepSize(year) {
-  const currentYear = new Date().getFullYear();
-  const distance = Math.abs(currentYear - year); // Year might be negative for BC
-
-  if (distance > 500) {
-    return 100;
-  } else if (distance > 200) {
-    return 50;
-  } else if (distance > 100) {
-    return 20;
-  } else {
-    return 5;
+<style>
+  .tippy-content {
+    font-size: 0.8em;
+    border: 1pt solid black;
+    border-radius: 5px;
+    background-color: var(--theme-background);
+    padding: 10px;
   }
-}
-```
+</style>
