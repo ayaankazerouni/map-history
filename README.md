@@ -1,59 +1,46 @@
-# Map history
+# Map-history
 
-This is an [Observable Framework](https://observablehq.com/framework/) app. To install the required dependencies, run:
+Code for a little side project hosted [here](https://ayaankazerouni.org/map-history).
+
+Broadly speaking, there are two pieces to this project.
+
+## Event scraping
+
+This all happens in [`src/events.py`](src/events.py).
+To play with the code:
+
+- Install Python
+- `cd map-history`
+- `python3 -m venv .venv && source .venv/bin/activate` to set up and activate a virtual environmnt
+- `python3 -m pip install -r requirements.txt` to install dependencies from `requirements.txt`
+
+The `get_events_on_day` function in `events.py` inspects all items under the **Events** subheading in the Wikipedia page, and attempts to assemble a record that looks like this:
 
 ```
-yarn install
+{
+  'year': number, # negative for years in BC
+  'month': string,
+  'day': number,
+  'longitude' number,
+  'latitude': number,
+  'description': string, # An HTML string
+}
 ```
 
-Then, to start the local preview server, run:
+Each list item in the **Events** subsection includes a brief description, which often contains links to other Wikipedia pages. 
+The function will inspect the info boxes in *those* Wikipedia pages, looking for coordinates (nominally, the "location" of the event).
+If the event description contains references to multiple linked locations, the function emits an event for each location.
 
-```
-yarn dev
-```
+Scraped events as of February, 2025 are in [`src/data/events-by-month/`](src/data/events-by-month).
+Each file corresponds to a month.
 
-Then visit <http://localhost:3000> to preview your app.
+## Plotting events 
 
-For more, see <https://observablehq.com/framework/getting-started>.
+This is built using [Observable Framework](https://observablehq.com/framework/) and hosted at [ayaankazerouni.org/map-history](https://ayaankazerouni.org/map-history).
 
-## Project structure
+Assuming you've cloned the repository and are in the `map-history` folder:
 
-A typical Framework project looks like this:
+- `yarn` to install dependencies
+- `yarn dev` to build and run a local server at `https://localhost:3000`
 
-```ini
-.
-├─ src
-│  ├─ components
-│  │  └─ timeline.js           # an importable module
-│  ├─ data
-│  │  ├─ launches.csv.js       # a data loader
-│  │  └─ events.json           # a static data file
-│  ├─ example-dashboard.md     # a page
-│  ├─ example-report.md        # another page
-│  └─ index.md                 # the home page
-├─ .gitignore
-├─ observablehq.config.js      # the app config file
-├─ package.json
-└─ README.md
-```
-
-**`src`** - This is the “source root” — where your source files live. Pages go here. Each page is a Markdown file. Observable Framework uses [file-based routing](https://observablehq.com/framework/project-structure#routing), which means that the name of the file controls where the page is served. You can create as many pages as you like. Use folders to organize your pages.
-
-**`src/index.md`** - This is the home page for your app. You can have as many additional pages as you’d like, but you should always have a home page, too.
-
-**`src/data`** - You can put [data loaders](https://observablehq.com/framework/data-loaders) or static data files anywhere in your source root, but we recommend putting them here.
-
-**`src/components`** - You can put shared [JavaScript modules](https://observablehq.com/framework/imports) anywhere in your source root, but we recommend putting them here. This helps you pull code out of Markdown files and into JavaScript modules, making it easier to reuse code across pages, write tests and run linters, and even share code with vanilla web applications.
-
-**`observablehq.config.js`** - This is the [app configuration](https://observablehq.com/framework/config) file, such as the pages and sections in the sidebar navigation, and the app’s title.
-
-## Command reference
-
-| Command           | Description                                              |
-| ----------------- | -------------------------------------------------------- |
-| `yarn install`            | Install or reinstall dependencies                        |
-| `yarn dev`        | Start local preview server                               |
-| `yarn build`      | Build your static site, generating `./dist`              |
-| `yarn deploy`     | Deploy your app to Observable                            |
-| `yarn clean`      | Clear the local data loader cache                        |
-| `yarn observable` | Run commands like `observable help`                      |
+Right now it is a direct conversion of the [Observable Notebook](https://observablehq.com/@ayaankazerouni/map-history) that I originally started with, so the code is all in one place and can certainly be organised better.
