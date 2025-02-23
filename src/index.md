@@ -39,7 +39,6 @@ const searchTerms = view(Inputs.text({
   label: 'Events containing the word or phrase',
   placeholder: 'e.g., Gandhi',
   width: 500,
-  submit: true
 }));
 ```
 
@@ -166,7 +165,6 @@ const eventsToDraw = filteredEvents(events, searchTerms, ranges);
 ```js
 import tippy from 'npm:tippy.js@6';
 import {
-  stripHtml,
   filteredEvents,
   formatYear,
   tipText

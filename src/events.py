@@ -128,7 +128,20 @@ def get_events_with_locations(event_tag: bs4.Tag) -> tuple[int, list[Event]]:
     links = event_tag.select('a')
     total_wiki_calls = 0
     for link in links:
-        coordinates = get_wikilink_coordinates(link)
+        href = link['href']
+        page_url = ""
+        if type(href) != str:
+            page_url = href[0] if href else ""
+        else:
+            page_url = href
+
+        # If the link is not a wiki link, quit
+        if "wiki/" not in page_url:
+            break    
+
+        page_title = page_url.split('wiki/')[-1]
+
+        coordinates = get_wikilink_coordinates(page_title)
         total_wiki_calls += 1
         if coordinates is not None:
             event: Event = {
@@ -144,33 +157,26 @@ def get_events_with_locations(event_tag: bs4.Tag) -> tuple[int, list[Event]]:
 WIKI_API = 'https://en.wikipedia.org/w/rest.php/v1/page/'
 
 # Example coord|33|52|04|S|151|12|36|E
-# Example coord|35|16|27|N|120|39|47|W
-COORD_RE = re.compile(r'coord\|(\d+\|\d+\|\d+\|[N|S])\|(\d+\|\d+\|\d+\|[E|W])')
+# Example Coord|41|00|49|N|28|57|18|E
+# Example coord|28|36|04.6|N|77|12|49.4|E
+COORD_NUM = r'\d+\.*\d*'
+COORD_RE = re.compile(r'coord\|({}\|{}\|{}\|[N|S])\|({}+\|{}+\|{}+\|[E|W])'.format(
+    COORD_NUM, COORD_NUM, COORD_NUM,
+    COORD_NUM, COORD_NUM, COORD_NUM
+), re.IGNORECASE)
 
 class Coordinates(TypedDict):
     latitude: float
     longitude: float
 
-def get_wikilink_coordinates(ref: bs4.element.Tag) -> Coordinates | None:
+def get_wikilink_coordinates(page_title: str) -> Coordinates | None:
     """
-    Given an 'a' tag with a /wiki/xyz link, explore the page's Infobox for coordinates.
+    Given a wikipedia page title, explore the page's Infobox for coordinates.
     Convert the coordinates from degrees to decimal and return.
 
     Returns { latitude: float, longitude: float } or None if the page is not a wiki page or
     if there were no coordinates in the Infobox (i.e., it wasn't a page for a place).
     """
-    href = ref['href']
-    page_url = ""
-    if type(href) != str:
-        page_url = href[0] if href else ""
-    else:
-        page_url = href
-
-    # If the link is not a wiki link, quit
-    if "wiki/" not in page_url:
-        return None    
-
-    page_title = page_url.split('wiki/')[-1]
     url = WIKI_API + page_title
     try:
         response = request.urlopen(url) # Expecting a JSON response
@@ -181,7 +187,7 @@ def get_wikilink_coordinates(ref: bs4.element.Tag) -> Coordinates | None:
         return None
 
     data = json.loads(response.read())['source']
-    coordinates = re.search(COORD_RE, data)
+    coordinates = re.search(COORD_RE, data, re.IGNORECASE)
 
     if coordinates is None:
         return None
@@ -210,3 +216,19 @@ def deg_to_dec(degrees: int, minutes: int, seconds: int, hemisphere: str) -> flo
     if hemisphere in ['S', 'W']:
         dec *= -1
     return dec
+
+####### TESTS #######
+
+import unittest
+
+class TestRegexes(unittest.TestCase):
+
+    def test_coord_with_ints(self):
+        coordNE = 'coord|41|00|49|N|28|57|18|E'
+        coordSW = 'coord|41|00|49|S|28|57|18|W'
+        self.assertRegex(coordNE, COORD_RE)
+        self.assertRegex(coordSW, COORD_RE)
+    
+    def test_coord_with_frac(self):
+        coord = 'coord|28|36|04.6|N|77|12|49.4|E' 
+        self.assertRegex(coord, COORD_RE)

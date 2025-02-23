@@ -12,10 +12,14 @@ type YearRange = {
   end: number
 }
 
-export const stripHtml = (element: string): string => {
+/**
+ * @param element An HTML element as a string.
+ * @returns The HTML's content, with no inner HTML tags, lowercased.
+ */
+const stripHtml = (element: string): string => {
   let tmp = document.createElement('div');
   tmp.innerHTML = element;
-  return tmp.innerText || "";
+  return tmp.innerText ? tmp.innerText.toLowerCase() : "";
 }
 
 export const filteredEvents = (
@@ -23,12 +27,17 @@ export const filteredEvents = (
   searchTerms: string,
   ranges: YearRange[]
 ): HistoryEvent[] => {
-  console.log(events.length);
   const start = Math.min(...ranges.map(e => e.start));
   const end = Math.max(...ranges.map(e => e.end));
   const eventsToDraw = searchTerms.length === 0 ?
     events.filter(e => e.year >= start && e.year <= end) : 
-    events.filter(e => tokenize(searchTerms).some(t => stripHtml(e.description).includes(t)));
+    events.filter(
+      e => 
+        tokenize(searchTerms.toLowerCase())
+          .some(
+            t => stripHtml(e.description).includes(t)
+          )
+      );
 
   return eventsToDraw;
 }
