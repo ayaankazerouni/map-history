@@ -1,6 +1,6 @@
 # Map-history
 
-Code for a little side project hosted [here](https://ayaankazerouni.org/map-history).
+Code for a little side project hosted [here](https://observablehq.com/@ayaankazerouni/map-history)
 
 Broadly speaking, there are two pieces to this project.
 
@@ -33,12 +33,3 @@ If the event description contains references to multiple linked locations, the f
 
 Scraped events as of February, 2025 are in [`src/data/events-by-month/`](src/data/events-by-month).
 Each file corresponds to a month.
-
-## Plotting events 
-
-This is built using [Observable Framework](https://observablehq.com/framework/) and hosted at [ayaankazerouni.org/map-history](https://ayaankazerouni.org/map-history).
-
-Assuming you've cloned the repository and are in the `map-history` folder:
-
-- `yarn` to install dependencies
-- `yarn dev` to build and run a local server at `https://localhost:3000`
