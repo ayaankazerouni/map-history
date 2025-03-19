@@ -2,9 +2,7 @@
 
 Code for a little side project hosted [here](https://observablehq.com/@ayaankazerouni/map-history)
 
-Broadly speaking, there are two pieces to this project.
-
-## Event scraping
+## Getting events from Wikipedia
 
 This all happens in [`src/events.py`](src/events.py).
 To play with the code:
