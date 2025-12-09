@@ -29,6 +29,46 @@ class Event(TypedDict, total=False):
     longitude: float
     latitude: float
 
+def download_events(directory_path: str) -> None:
+    """
+    Download events for all days of the year and save to JSON files.
+
+    Creates one JSON file per month (01.json, 02.json, etc.) in the specified directory.
+    Each file contains all events from all days in that month.
+
+    Params:
+        - directory_path -- Path to directory relative to project root where JSON files will be saved
+    """
+    import pathlib
+
+    # Create the directory if it doesn't exist
+    dir_path = pathlib.Path(directory_path)
+    dir_path.mkdir(parents=True, exist_ok=True)
+
+    total_wiki_calls = 0
+
+    for month_num in range(1, len(MONTHS) + 1):
+        month_info = MONTHS[month_num - 1]
+        month_name = month_info['name']
+        num_days = month_info['days']
+        month_events = []
+
+        print(f"Downloading events for {month_name}...")
+
+        for day in range(1, num_days + 1):
+            wiki_calls, events = get_events_on_day(month_num, day)
+            total_wiki_calls += wiki_calls
+            month_events.extend(events)
+
+        # Save month's events to a JSON file
+        output_file = dir_path / f"{month_num:02d}.json"
+        with open(output_file, 'w') as f:
+            json.dump(month_events, f, indent=2)
+
+        print(f"  Saved {len(month_events)} events to {output_file}")
+
+    print(f"\nTotal wiki calls made: {total_wiki_calls}")
+
 def get_events_on_day(month: int, day: int) -> tuple[int, list[Event]]:
     """
     Get the events that occurred on the given month and day using the Wikimedia onthisday API.

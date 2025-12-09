@@ -21,7 +21,7 @@ To play with the code:
 - `python3 -m venv .venv && source .venv/bin/activate` to set up and activate a virtual environment
 - `python3 -m pip install -r requirements.txt` to install dependencies from `requirements.txt`
 
-The `get_events_on_day` function in `events.py` inspects all items under the **Events** subheading in the Wikipedia page, and attempts to assemble a record that looks like this:
+The `get_events_on_day` function in `events.py` inspects the Wikimedia "on this day" endpoint for each day of the year and attempts to assemble a record that looks like this:
 
 ```
 {
@@ -34,9 +34,7 @@ The `get_events_on_day` function in `events.py` inspects all items under the **E
 }
 ```
 
-Each list item in the **Events** subsection includes a brief description, which often contains links to other Wikipedia pages. 
-The function will inspect the info boxes in *those* Wikipedia pages, looking for coordinates (nominally, the "location" of the event).
-If the event description contains references to multiple linked locations, the function emits an event for each location.
+If the event description contains references to multiple locations, the function emits an event for each location.
 
-Scraped events as of February, 2025 are in [`src/data/events-by-month/`](src/data/events-by-month).
+Scraped events as of December 2025 are in [`src/data/events-by-month/`](src/data/events-by-month).
 Each file corresponds to a month.

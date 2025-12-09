@@ -3,12 +3,22 @@ import * as topojson from 'topojson-client';
 
 const PROJECTION = d3.geoNaturalEarth1();
 
+const IS_DARK = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+const COLORS = {
+  mapFill: 'none',
+  mapStroke: IS_DARK ? 'white' : 'black',
+  pointFill: IS_DARK ? 'lightgrey' : 'grey',
+  tooltipBg: IS_DARK ? 'darkslategrey' : 'ivory',
+  tooltipFg: IS_DARK ? 'ivory' : 'graphite'
+}
+
 export function worldMap(geodata) {
-  const width = 1100;
+  const width = 1200;
   const height = 600;
 
   const zoom = d3.zoom()
-    .scaleExtent([0.8, 3])
+    .scaleExtent([0.8, 5])
     .translateExtent([[-100, -100], [width + 100, height + 100]])
     .wheelDelta(event => -event.deltaY * 0.00085)
     .on('zoom', zoomed);
@@ -25,8 +35,8 @@ export function worldMap(geodata) {
     .selectAll('path')
     .data(topojson.feature(geodata, geodata.objects.land).features)
     .join('path')
-      .attr('fill', 'white')
-      .attr('stroke', 'lightgrey')
+      .attr('fill', COLORS.mapFill)
+      .attr('stroke', COLORS.mapStroke)
       .attr('d', path);
 
   const dots = g.append('g');
@@ -35,13 +45,13 @@ export function worldMap(geodata) {
   const tooltip = d3.select('body').append('div')
     .style('position', 'absolute')
     .style('visibility', 'hidden')
-    .style('background-color', 'darkgrey')
+    .style('background-color', COLORS.tooltipBg)
     .style('border', '1px solid #ddd')
     .style('border-radius', '4px')
     .style('padding', '8px')
     .style('font-size', '14px')
-    .style('font-family', 'Avenir sans-serif')
-    .style('color', 'black')
+    .style('font-family', 'Avenir, sans-serif')
+    .style('color', COLORS.tooltipFg)
     .style('box-shadow', '0 2px 4px rgba(0,0,0,0.1)')
     .style('pointer-events', 'none')
     .style('z-index', '1000')
@@ -60,7 +70,7 @@ export function worldMap(geodata) {
           .data(data, d => `${d.year}-${d.longitude}-${d.latitude}-${d.cleanDescription}`)
           .join(
             enter => enter.append('circle')
-              .attr('fill', 'firebrick')
+              .attr('fill', COLORS.pointFill)
               .attr('r', 3)
               .attr('transform', d => `translate(${PROJECTION([d.longitude, d.latitude])})`)
               .on('mouseover', (_, d) => {
