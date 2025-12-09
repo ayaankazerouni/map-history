@@ -188,7 +188,8 @@ const eventsToDraw = searchTerms.length === 0 ?
 ```
 
 ```js
-const events = (await FileAttachment("events@6.json").json()).map(e => ({...e, cleanDescription: stripHtml(e.description)}))
+const events = (await FileAttachment("data/events.json").json())
+  .map(e => ({...e, cleanDescription: stripHtml(e.description)}))
 ```
 
 ```js
@@ -209,7 +210,7 @@ function tokenize(input) {
 ```
 
 ```js
-const world = FileAttachment("land-50m.json").json()
+const world = FileAttachment("data/land-50m.json").json()
 ```
 
 ```js
