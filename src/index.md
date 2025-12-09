@@ -1,31 +1,8 @@
 # Map history
 
 ```js
+import { worldMap, getGeoData } from "./components/map.js"
 import { stripHtml } from './components/lib.js'
-import { worldMap } from './components/map.js'
-```
-
-Hover over points on the map to see event descriptions (sourced from Wikipedia's "on this day" pages).
-
-<small>Multiple selections will also include all events in between those year ranges.</small>
-
-```js
-const ranges = view(
-  Inputs.checkbox(
-    [ "Pre-1600", "1600-1899", "1900-1949", "1950-1999", "2000-2024" ],
-    {
-      value: "Pre-1600",
-      valueof: el => ({
-        "Pre-1600": { start: -1500, end: 1600 },
-        "1600-1899": { start: 1600, end: 1899 },
-        "1900-1949": { start: 1900, end: 1940 },
-        "1950-1999": { start: 1950, end: 1999 },
-        "2000-2024": { start: 2000, end: 2025 }
-      }[el]),
-      disabled: !!searchTerms.length, // Disabled if searchTerms.length > 0
-    }
-  )
-);
 ```
 
 ```js
@@ -39,29 +16,23 @@ const searchTerms = view(
 ```
 
 ```js
-const map = worldMap(world);
-display(map);
-```
-
-```js
 // Reactive: run whenever eventsToDraw changes.
 map.update(eventsToDraw);
 ```
 
 ```js
 // Reactive: run whenver searchTerms, start, or end change.
-const start = Math.min(...ranges.map(e => e.start));
-const end = Math.max(...ranges.map(e => e.end));
-
-const eventsToDraw = searchTerms.length === 0 ?
+const eventsToDraw = 
   events
-    .params({ start, end })
-    .filter((d, $) => d.year >= $.start && d.year <= $.end) :
-  events
-    .params({ searchTerms })
+    .params({ searchTerms, year: yearInput })
     .filter((d, $) => {
-      const lowerSearch = aq.op.lower($.searchTerms);
-      return aq.op.includes(aq.op.lower(d.cleanDescription), lowerSearch);
+      if (aq.op.length($.searchTerms)) {
+        const lowerSearch = aq.op.lower($.searchTerms);
+        return d.year <= $.year && 
+          aq.op.includes(aq.op.lower(d.cleanDescription), lowerSearch);
+      } else {
+        return false;
+      }
     });
 ```
 
@@ -75,4 +46,38 @@ const world = FileAttachment('./data/land-50m.json').json();
 const projection = d3.geoNaturalEarth1()
   .scale(200)
   .translate([550, 300]);
+```
+
+```js
+const basemaps = (await FileAttachment('data/time-periods.json').json()).years;
+```
+
+```js
+const years = basemaps.map(d => d.year);
+const yearIndexInput = view(
+  Inputs.range(
+    [0, years.length - 1],
+    {
+      step: 1,
+      label: 'Year',
+      value: years.length - 1,
+      format: i => years[i],
+      width: 640
+    }
+  )
+);
+```
+
+<small>
+
+_Colours in the map don't mean anything; they are used only to help demarcate borders. The only exceptions are <span style='padding: 2px; border: darkgrey 1pt solid; background-color: lightgrey'>grey</span> regions. Those are unnamed or unclaimed in that time period (according to [`historical-basemaps`](https://github.com/aourednik/historical-basemaps))._
+
+</small>
+
+```js
+const yearInput = years[yearIndexInput];
+const currentBasemap = basemaps[yearIndexInput];
+const geodata = getGeoData(currentBasemap.filename);
+const map = await worldMap(geodata);
+display(map);
 ```
