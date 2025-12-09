@@ -1,6 +1,9 @@
 # Map history
 
 ```js
+import { stripHtml } from "./components/lib.js";
+
+import * as aq from "npm:arquero";
 import * as vega from "npm:vega@5";
 import * as vegaLite from "npm:vega-lite@5";
 import * as vegaLiteApi from "npm:vega-lite-api@5";
@@ -29,13 +32,6 @@ const options = {
 
 const vl = vegaLiteApi.register(vega, vegaLite, options);
 ```
-
-<small>
-
-_See this [GitHub repo](https://github.com/ayaankazerouni/map-history) for info about how data was obtained, plus some caveats._
-
-</small>
----
 
 Hover over points on the map to see event descriptions (sourced from Wikipedia's "on this day" pages).
 
@@ -173,50 +169,27 @@ const chart = vl.layer(earth, points, chosenPoint)
 display(await chart);
 ```
 
-## Data
-
-```js
-const client = DuckDBClient.of({events});
-```
-
 ```js
 const start = Math.min(...ranges.map(e => e.start));
 const end = Math.max(...ranges.map(e => e.end));
+
 const eventsToDraw = searchTerms.length === 0 ?
-  client.query('select * from events where year >= CAST(? AS DOUBLE) and year <= CAST(? AS DOUBLE)', [start, end]) :
-  client.query('select * from events where cleanDescription ilike ?', [`%${searchTerms}%`])
+  events
+    .params({ start, end })
+    .filter((d, $) => d.year >= $.start && d.year <= $.end) :
+  events
+    .params({ searchTerms })
+    .filter((d, $) => {
+      const lowerSearch = aq.op.lower($.searchTerms);
+      return aq.op.includes(aq.op.lower(d.cleanDescription), lowerSearch);
+    });
 ```
 
 ```js
-const events = (await FileAttachment("data/events.json").json())
-  .map(e => ({...e, cleanDescription: stripHtml(e.description)}))
-```
-
-```js
-function tokenize(input) {
-    const regex = /"([^"]*)"|\S+/g;
-    let match;
-    const tokens = [];
-  
-    while ((match = regex.exec(input)) !== null) {
-        // If content was quoted, add the capture group to the list.
-        // Otherwise, add the match as is.
-        tokens.push(match[1] ? match[1] : match[0]);
-    }
-  
-    return tokens;
-}
-
-```
-
-```js
+const events = aq
+  .fromJSON(await FileAttachment('data/events.json').json())
+  .derive({
+    cleanDescription: aq.escape(d => stripHtml(d.description))
+  });
 const world = FileAttachment("data/land-50m.json").json()
-```
-
-```js
-function stripHtml(element) {
-  let tmp = document.createElement('div');
-  tmp.innerHTML = element;
-  return tmp.innerText || "";
-}
 ```
