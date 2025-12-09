@@ -1,10 +1,18 @@
 # Map-history
 
-Code for a little side project hosted [here](https://observablehq.com/@ayaankazerouni/map-history)
+## View the map
 
-Broadly speaking, there are two pieces to this project.
+A map of historical events (dots on a map). You can see the Observable notebook version [here](https://observablehq.com/@ayaankazerouni/map-history.
 
-## Event scraping
+To run the site locally as an [Observable Framework](https://observablehq.com/framework/) site:
+
+Make sure you have Node installed. I'm using v22.13.1.
+
+* Install Observable dependencies: `npm install -g yarn && yarn` (install yarn and use yarn to install dependencies)
+* `yarn dev` to run the dev server at [https://localhost:3000](https://localhost:3000)
+  - The first time you run this, Observable Framework will install some further dependencies that are being used in [`index.md`](./src/index.md), e.g., vega, vega-lite, vega-lite-api, vega-tooltip
+
+## Getting events from Wikipedia
 
 This all happens in [`src/events.py`](src/events.py).
 To play with the code:
