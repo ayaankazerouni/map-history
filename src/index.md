@@ -2,23 +2,20 @@
 toc: false
 ---
 
+<link rel="stylesheet" href="styles.css" >
+
 # Map history
 
 ```js
 // Load components
 import { worldMap, getGeoData } from "./components/map.js"
-import { stripHtml, filterEvents } from './components/lib.js'
+import { stripHtml, filterTest } from './components/lib.js'
 ```
 
 ```js
 // Load data
 const events = await FileAttachment('data/events.json').json();
 const basemaps = (await FileAttachment('data/time-periods.json').json()).years;
-```
-
-```js
-const eventsToDraw = filterEvents(events, searchTerms, yearInput);
-map.update(eventsToDraw);
 ```
 
 ```js
@@ -39,13 +36,40 @@ const yearIndex = Generators.input(yearIndexInput);
 ```
 
 ```js
-const searchTermsInput = Inputs.text({
-  label: 'Events containing the word or phrase',
-  placeholder: 'e.g., Gandhi',
-  width: 500,
-})
-searchTermsInput.querySelector('label').style.setProperty('display', 'none');
-const searchTerms = Generators.input(searchTermsInput);
+// const searchTermsInput = Inputs.text({
+//   label: 'Events containing the word or phrase',
+//   placeholder: 'e.g., Gandhi',
+//   width: 500,
+// })
+// searchTermsInput.querySelector('label').style.setProperty('display', 'none');
+// const searchTerms = Generators.input(searchTermsInput);
+const searchInput = Inputs.search(events,
+  {
+    width: 500,
+    placeholder: "Search events...",
+    required: false,
+    filter: filterTest
+  });
+const searchResult = Generators.input(searchInput);
+```
+
+```js
+const filteredEventsTable = Inputs.table(
+  searchResult.map(d => ({
+    Year: String(d.year),
+    Description: d.description,
+  })),
+  {
+    width: {
+      Year: 40,
+    },
+    height: 1000,
+    required: false,
+    select: true,
+    multiple: false
+  }
+);
+const chosenEvents = Generators.input(filteredEventsTable);
 ```
 
 ```js
@@ -71,10 +95,8 @@ const map = await worldMap(geodata);
   <div class="card grid-colspan-1">
     <div style='display: flex; flex-flow: column; align-items: left;'>
       <div style='font-size: 1.1em'>Search for events containing a word or phrase.</div>
-      ${searchTermsInput}
-      <small>Will only show matching events before or during ${yearInput}.</small>
-    </div>
-    <div>
+      ${searchInput}
+      ${filteredEventsTable}
     </div>
   </div>
 </div>

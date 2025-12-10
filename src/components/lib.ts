@@ -31,28 +31,16 @@ export function stripHtml(element: string) {
 
 interface Event { year: number, description: string }
 /**
- * Filters the events table based on the search terms.
- * Search terms are tokenized into words/phrases (phrases are surrounded by quotes).
  *
- * @param eventsTable An Arquero ColumnTable of events.
- * @param searchTerms The search terms string.
- * @param year The year to filter events up to.
- * @returns A filtered Arquero ColumnTable of events.
+ * @param events A search phrase
+ * @returns
  */
-export function filterEvents(eventsTable: Event[], searchTerms: string, year: number) {
+export function filterTest(searchTerms: string) {
   const lowerSearch = searchTerms.toLowerCase();
-  return eventsTable
-    .filter(event => {
-      if (searchTerms.length > 0) {
-        const lowerDesc = event.description.toLowerCase();
-        const tokenized = tokenize(lowerSearch);
-        if (event.year > year) {
-          return false;
-        } else {
-          return tokenized.some(t => lowerDesc.includes(t));
-        }
-      } else {
-        return false;
-      }
-    });
+
+  return (e: Event) => {
+    const lowerDesc = e.description.toLowerCase();
+    const tokenized = tokenize(lowerSearch);
+    return tokenized.some(t => lowerDesc.includes(t));
+  };
 }
