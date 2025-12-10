@@ -1,20 +1,10 @@
 import * as d3 from 'd3';
 import {FileAttachment} from "observablehq:stdlib";
 
-const PROJECTION = d3.geoNaturalEarth1();
+const PROJECTION = d3.geoNaturalEarth1()
+  .scale(150);
 
 const IS_DARK = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-// Create consistent color scale based on all countries across all years
-const timePeriods = await FileAttachment("../data/time-periods.json").json();
-const allCountries = [...new Set(
-  timePeriods.years.flatMap(y => y.countries)
-)].sort();
-
-const COLOR_SCALE = d3.scaleOrdinal()
-  .domain(allCountries)
-  .range(d3.quantize(d3.interpolateInferno, allCountries.length));
-
 const COLORS = {
   landFill: 'none',
   landStroke: IS_DARK ? 'white' : 'black',
@@ -24,6 +14,16 @@ const COLORS = {
   tooltipFg: IS_DARK ? 'ivory' : 'graphite'
 }
 
+// Create consistent color scale based on all countries across all years
+const timePeriods = await FileAttachment("../data/time-periods.json").json();
+const allCountries = [...new Set(
+  timePeriods.years.flatMap(y => y.countries)
+)].sort();
+
+const COLOR_SCALE = d3.scaleOrdinal()
+  .domain(allCountries)
+  .range(d3.quantize(d3.interpolateCubehelixDefault, allCountries.length));
+
 export async function worldMap(geodata) {
 
   // If geodata is a FileAttachment, await its JSON
@@ -31,11 +31,11 @@ export async function worldMap(geodata) {
     geodata = await geodata.json();
   }
 
-  const width = 1200;
+  const width = 1000;
   const height = 600;
 
   const zoom = d3.zoom()
-    .scaleExtent([0.8, 10])
+    .scaleExtent([0.8, 8])
     .translateExtent([[-100, -100], [width + 100, height + 100]])
     .wheelDelta(event => -event.deltaY * 0.00085)
     .on('zoom', zoomed);
@@ -47,10 +47,18 @@ export async function worldMap(geodata) {
   const g = container.append('g');
 
   const path = d3.geoPath(PROJECTION);
+  const sphere = ({ type: 'Sphere' });
 
   // Reusable tooltip div
   const tooltip = getTooltipElement();
   const landTooltip = getTooltipElement();
+
+  g.append('path')
+    .datum(sphere)
+    .attr('fill', 'lightblue')
+    .attr('stroke', 'black')
+    .attr('stroke-width', 1.5)
+    .attr('d', path);
 
   const land = g.append('g')
     .selectAll('path')
@@ -111,7 +119,7 @@ export async function worldMap(geodata) {
     container.node(), {
       update: (data) => {
         dots.selectAll('circle')
-          .data(data, d => `${d.year}-${d.longitude}-${d.latitude}-${d.cleanDescription}`)
+          .data(data, d => `${d.year}-${d.longitude}-${d.latitude}-${d.description}`)
           .join(
             enter => enter.append('circle')
               .attr('fill', COLORS.pointFill)
@@ -122,7 +130,7 @@ export async function worldMap(geodata) {
                 const bce = d.year < 0 ? 'BCE' : 'CE';
                 const date = `${d.month} ${d.day}, ${Math.abs(d.year)} ${bce}`;
                 tooltip
-                  .html(`<strong>${date}</strong><br/>${d.cleanDescription}`)
+                  .html(`<strong>${date}</strong><br/>${d.description}`)
                   .style('visibility', 'visible');
               })
               .on('mousemove', (event) => {
@@ -158,6 +166,8 @@ function getTooltipElement() {
   return tooltip;
 }
 
+// FileAttachment requires a string literal for static analysis,
+// so we need to map filenames to FileAttachment objects manually.
 export function getGeoData(filename) {
   const basemaps = {
     "world_bc123000.geojson": FileAttachment("../data/historical-basemaps/world_bc123000.geojson"),

@@ -1,83 +1,80 @@
+---
+toc: false
+---
+
 # Map history
 
 ```js
+// Load components
 import { worldMap, getGeoData } from "./components/map.js"
-import { stripHtml } from './components/lib.js'
+import { stripHtml, filterEvents } from './components/lib.js'
 ```
 
 ```js
-const searchTerms = view(
-  Inputs.text({
-    label: 'Events containing the word or phrase',
-    placeholder: 'e.g., Gandhi',
-    width: 500,
-  })
-);
-```
-
-```js
-// Reactive: run whenever eventsToDraw changes.
-map.update(eventsToDraw);
-```
-
-```js
-// Reactive: run whenver searchTerms, start, or end change.
-const eventsToDraw = 
-  events
-    .params({ searchTerms, year: yearInput })
-    .filter((d, $) => {
-      if (aq.op.length($.searchTerms)) {
-        const lowerSearch = aq.op.lower($.searchTerms);
-        return d.year <= $.year && 
-          aq.op.includes(aq.op.lower(d.cleanDescription), lowerSearch);
-      } else {
-        return false;
-      }
-    });
-```
-
-```js
-const events = aq
-  .fromJSON(await FileAttachment('data/events.json').json())
-  .derive({
-    cleanDescription: aq.escape(d => stripHtml(d.description))
-  });
-const world = FileAttachment('./data/land-50m.json').json();
-const projection = d3.geoNaturalEarth1()
-  .scale(200)
-  .translate([550, 300]);
-```
-
-```js
+// Load data
+const events = await FileAttachment('data/events.json').json();
 const basemaps = (await FileAttachment('data/time-periods.json').json()).years;
 ```
 
 ```js
-const years = basemaps.map(d => d.year);
-const yearIndexInput = view(
-  Inputs.range(
-    [0, years.length - 1],
-    {
-      step: 1,
-      label: 'Year',
-      value: years.length - 1,
-      format: i => years[i],
-      width: 640
-    }
-  )
-);
+const eventsToDraw = filterEvents(events, searchTerms, yearInput);
+map.update(eventsToDraw);
 ```
-
-<small>
-
-_Colours in the map don't mean anything; they are used only to help demarcate borders. The only exceptions are <span style='padding: 2px; border: darkgrey 1pt solid; background-color: lightgrey'>grey</span> regions. Those are unnamed or unclaimed in that time period (according to [`historical-basemaps`](https://github.com/aourednik/historical-basemaps))._
-
-</small>
 
 ```js
-const yearInput = years[yearIndexInput];
-const currentBasemap = basemaps[yearIndexInput];
+const years = basemaps.map(d => d.year);
+const yearIndexInput = Inputs.range(
+  [0, years.length - 1],
+  {
+    step: 1,
+    label: 'Year',
+    value: years.length - 1,
+    format: i => years[i],
+    width: 350 
+  }
+);
+yearIndexInput.querySelector("input[type=number]").remove();
+yearIndexInput.querySelector('label').style.setProperty('display', 'none');
+const yearIndex = Generators.input(yearIndexInput);
+```
+
+```js
+const searchTermsInput = Inputs.text({
+  label: 'Events containing the word or phrase',
+  placeholder: 'e.g., Gandhi',
+  width: 500,
+})
+searchTermsInput.querySelector('label').style.setProperty('display', 'none');
+const searchTerms = Generators.input(searchTermsInput);
+```
+
+```js
+const yearInput = years[yearIndex];
+const currentBasemap = basemaps[yearIndex];
 const geodata = getGeoData(currentBasemap.filename);
 const map = await worldMap(geodata);
-display(map);
 ```
+
+<div class="grid grid-cols-3">
+  <div class="card grid-colspan-2">
+    <div>
+      <div style="display: flex; flex-flow: column; align-items: center;">
+        <span style='font-size: 1.2em'>Selected year: ${yearInput}</span>
+        ${yearIndexInput} 
+        <small>Show historical borders for the given year.</small>
+      </div>
+      <div style="overflow: hidden;">
+      ${display(map)}
+      </div>
+    </div>
+  </div>
+  <div class="card grid-colspan-1">
+    <div style='display: flex; flex-flow: column; align-items: left;'>
+      <div style='font-size: 1.1em'>Search for events containing a word or phrase.</div>
+      ${searchTermsInput}
+      <small>Will only show matching events before or during ${yearInput}.</small>
+    </div>
+    <div>
+    </div>
+  </div>
+</div>
