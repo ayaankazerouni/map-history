@@ -76,7 +76,14 @@ const chosenEvents = Generators.input(filteredEventsTable);
 const yearInput = years[yearIndex];
 const currentBasemap = basemaps[yearIndex];
 const geodata = getGeoData(currentBasemap.filename);
-const map = await worldMap(geodata);
+```
+
+```js
+const width = await Generators.width(document.querySelector('#map'));
+```
+
+```js
+const map = await worldMap(geodata, width);
 ```
 
 <div class="grid grid-cols-3">
@@ -87,7 +94,7 @@ const map = await worldMap(geodata);
         ${yearIndexInput} 
         <small>Show historical borders for the given year.</small>
       </div>
-      <div style="overflow: hidden;">
+      <div style="overflow: hidden;" id='map'>
       ${display(map)}
       </div>
     </div>

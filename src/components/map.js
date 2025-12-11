@@ -1,9 +1,6 @@
 import * as d3 from 'd3';
 import {FileAttachment} from "observablehq:stdlib";
 
-const PROJECTION = d3.geoNaturalEarth1()
-  .scale(150);
-
 const IS_DARK = window.matchMedia('(prefers-color-scheme: dark)').matches;
 const COLORS = {
   landFill: 'none',
@@ -24,15 +21,21 @@ const COLOR_SCALE = d3.scaleOrdinal()
   .domain(allCountries)
   .range(d3.quantize(d3.interpolateCubehelixDefault, allCountries.length));
 
-export async function worldMap(geodata) {
+export async function worldMap(geodata, width=1000) {
 
   // If geodata is a FileAttachment, await its JSON
   if (geodata?.json) {
     geodata = await geodata.json();
   }
 
-  const width = 1000;
-  const height = 600;
+  // Calculate responsive dimensions
+  const height = width * 0.6; // Maintain aspect ratio
+  const scale = width / 6.5; // Scale based on width
+
+  // Create projection with responsive scale
+  const projection = d3.geoNaturalEarth1()
+    .scale(scale)
+    .translate([width / 2, height / 2]);
 
   const zoom = d3.zoom()
     .scaleExtent([0.8, 8])
@@ -46,7 +49,7 @@ export async function worldMap(geodata) {
 
   const g = container.append('g');
 
-  const path = d3.geoPath(PROJECTION);
+  const path = d3.geoPath(projection);
   const sphere = ({ type: 'Sphere' });
 
   // Reusable tooltip div
@@ -125,7 +128,7 @@ export async function worldMap(geodata) {
               .attr('fill', COLORS.pointFill)
               .attr('stroke', COLORS.pointStroke)
               .attr('r', 3)
-              .attr('transform', d => `translate(${PROJECTION([d.longitude, d.latitude])})`)
+              .attr('transform', d => `translate(${projection([d.longitude, d.latitude])})`)
               .on('mouseover', (_, d) => {
                 const bce = d.year < 0 ? 'BCE' : 'CE';
                 const date = `${d.month} ${d.day}, ${Math.abs(d.year)} ${bce}`;
