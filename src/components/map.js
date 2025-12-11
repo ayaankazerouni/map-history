@@ -1,17 +1,21 @@
 import * as d3 from "d3";
 import { FileAttachment } from "observablehq:stdlib";
 
+/** @type {import('./lib.js').HistEvent} */
+
 /**
  * Get color based on key and dark mode. Dark mode is typically set from
  * an Observable reactive variable.
  *
- * @param {'landFill' | 'landStroke' | 'seaFill' | 'pointFill' | 'pointStroke' | 'tooltipBg' | 'tooltipFg'} key
+ * @param { 'landFill' | 'unclaimedFill' | 'landStroke' | 'landHighlight' | 'seaFill' | 'pointFill' | 'pointStroke' | 'tooltipBg' | 'tooltipFg'} key
  * @param {boolean} dark A reactive variable indicating dark mode.
  * @returns {string}
  */
 function getColor(key, dark = false) {
   return {
-    landFill: "none",
+    landFill: "darkgrey",
+    unclaimedFill: "lightgrey",
+    landHighlight: dark ? "coral" : "crimson",
     landStroke: dark ? "white" : "black",
     seaFill: dark ? "steelblue" : "lightblue",
     pointFill: dark ? "white" : "darkgrey",
@@ -30,9 +34,15 @@ let lastTransform = d3.zoomIdentity;
  * @param {FileAttachment} geodata A FileAttachment containing GeoJSON data.
  * @param {number} width Default 1000
  * @param {number} dark Default false
+ * @param {HistEvent} chosenEvent An event to highlight. Defaults to null
  * @returns
  */
-export async function worldMap(geodata, width = 1000, dark = false) {
+export async function worldMap(
+  geodata,
+  width = 1000,
+  dark = false,
+  chosenEvent = null,
+) {
   // If geodata is a FileAttachment, await its JSON
   if (geodata?.json) {
     geodata = await geodata.json();
@@ -82,12 +92,22 @@ export async function worldMap(geodata, width = 1000, dark = false) {
   const land = g.append("g").selectAll("path").data(geodata.features);
 
   function drawLand(landContainer) {
+    const containsChosenEvent = (d) => {
+      if (chosenEvent === null) return false;
+      const [lon, lat] = [chosenEvent.longitude, chosenEvent.latitude];
+      return d3.geoContains(d, [lon, lat]);
+    };
+
     landContainer
       .join("path")
       .attr("d", path)
-      .attr("fill", (d) => (getName(d) ? "lightgrey" : "darkgrey"))
+      .attr("fill", (d) =>
+        containsChosenEvent(d)
+          ? getColor("landHighlight", dark)
+          : getColor(getName(d) ? "landFill" : "unclaimedFill", dark),
+      )
       .attr("stroke", "black")
-      .attr("stroke-width", 0.8)
+      .attr("stroke-width", (d) => (containsChosenEvent(d) ? 2.5 : 1.5))
       .attr("stroke-opacity", (d) => (getName(d) ? 0.3 : 0.8))
       .on("mouseover", (_, d) => {
         const name = getName(d);
@@ -111,6 +131,34 @@ export async function worldMap(geodata, width = 1000, dark = false) {
 
   const dots = g.append("g");
 
+  if (chosenEvent) {
+    dots.selectAll('circle')
+      .data([chosenEvent])
+      .join('circle')
+      .attr("fill", getColor("pointFill", dark))
+      .attr("stroke", getColor("pointStroke", dark))
+      .attr("r", 3)
+      .attr(
+        "transform",
+        (d) => `translate(${projection([d.longitude, d.latitude])})`,
+      )
+      .on("mouseover", (_, d) => {
+        const bce = d.year < 0 ? "BCE" : "CE";
+        const date = `${d.month} ${d.day}, ${Math.abs(d.year)} ${bce}`;
+        tooltip
+          .html(`<strong>${date}</strong><br/>${d.description}`)
+          .style("visibility", "visible");
+      })
+      .on("mousemove", (event) => {
+        tooltip
+          .style("top", event.pageY + 10 + "px")
+          .style("left", event.pageX + 10 + "px");
+      })
+      .on("mouseout", () => {
+        tooltip.style("visibility", "hidden");
+      });
+  }
+
   function resetZoom(event) {
     event.preventDefault();
     event.stopPropagation();
@@ -126,47 +174,13 @@ export async function worldMap(geodata, width = 1000, dark = false) {
   container.call(zoom); // Make it zoomable
   container.call(zoom.transform, lastTransform); // Restore last transform
 
-  return Object.assign(container.node(), {
-    update: (data) => {
-      dots
-        .selectAll("circle")
-        .data(
-          data,
-          (d) => `${d.year}-${d.longitude}-${d.latitude}-${d.description}`,
-        )
-        .join(
-          (enter) =>
-            enter
-              .append("circle")
-              .attr("fill", getColor("pointFill", dark))
-              .attr("stroke", getColor("pointStroke", dark))
-              .attr("r", 3)
-              .attr(
-                "transform",
-                (d) => `translate(${projection([d.longitude, d.latitude])})`,
-              )
-              .on("mouseover", (_, d) => {
-                const bce = d.year < 0 ? "BCE" : "CE";
-                const date = `${d.month} ${d.day}, ${Math.abs(d.year)} ${bce}`;
-                tooltip
-                  .html(`<strong>${date}</strong><br/>${d.description}`)
-                  .style("visibility", "visible");
-              })
-              .on("mousemove", (event) => {
-                tooltip
-                  .style("top", event.pageY + 10 + "px")
-                  .style("left", event.pageX + 10 + "px");
-              })
-              .on("mouseout", () => {
-                tooltip.style("visibility", "hidden");
-              }),
-          (update) => update,
-          (exit) => exit.remove(),
-        );
-    },
-  });
+  return container.node();
 }
 
+/**
+ * @param {{ properties: { NAME: string, SUBJECTO: string } }} d A GeoJSON feature
+ * @returns { string | null }
+ */
 function getName(d) {
   const { NAME, SUBJECTO } = d.properties;
   if (NAME === null || NAME === "unclaimed") {
@@ -178,6 +192,10 @@ function getName(d) {
   }
 }
 
+/**
+ * @param {boolean} dark
+ * @returns A d3 selection representing the tooltip element, initially invisible.
+ */
 function getTooltipElement(dark = false) {
   const tooltip = d3
     .select("body")

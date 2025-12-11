@@ -24,9 +24,8 @@ const basemaps = (await FileAttachment("data/time-periods.json").json()).years;
 const timePeriods = basemaps.map(d => d.year);
 ```
 
-<!--Reactive variables -->
-
 ```js
+// Reactive variables
 const dark = Generators.dark();
 const width = Generators.width(document.querySelector("#map"));
 ```
@@ -58,13 +57,19 @@ const searchResult = Generators.input(searchInput);
 ```js
 // A table input showing filtered events based on search input
 const filteredEventsTable = Inputs.table(
-  searchResult.map((d) => ({
-    Year: String(d.year),
-    Description: d.description,
-  })),
+  searchResult,
   {
+    columns: ['year', 'description'],
+    format: {
+      year: d3.format('d'),
+      description: d => html`<span title="${d}">${d}</span>`
+    },
+    header: {
+      year: 'Year',
+      description: 'Description'
+    },
     width: {
-      Year: 40,
+      year: 40,
     },
     height: 1000,
     required: false,
@@ -76,13 +81,14 @@ const chosenEvent = Generators.input(filteredEventsTable);
 ```
 
 ```js
-const chosenEventYear = chosenEvent?.Year;
+const chosenEventYear = chosenEvent?.year;
 if (chosenEventYear !== undefined) {
   const closestTimePeriod = getClosestTimePeriod(
     +chosenEventYear,
     timePeriods
   );
-  yearIndexInput.value = timePeriods.indexOf(closestTimePeriod);
+  const targetIndex = timePeriods.indexOf(closestTimePeriod);
+  yearIndexInput.value = targetIndex;
   yearIndexInput.dispatchEvent(new Event("input"));
 }
 ```
@@ -94,7 +100,7 @@ const geodata = getGeoData(currentBasemap.filename);
 ```
 
 ```js
-const map = await worldMap(geodata, width, dark);
+const map = await worldMap(geodata, width, dark, chosenEvent);
 ```
 
 <div class="grid grid-cols-3">
@@ -103,7 +109,10 @@ const map = await worldMap(geodata, width, dark);
       <div style="display: flex; flex-flow: column; align-items: center;">
         <span style='font-size: 1.2em'>Selected year: ${yearInput}</span>
         ${yearIndexInput} 
-        <small>Show historical borders for the given year.</small>
+        <small>
+          Showing historical borders for the chosen year.<br>
+          See <a href="https://github.com/aourednik/historical-basemaps"><code>aourednik/historical-basemaps</code>.</a>
+        </small>
       </div>
       <div style="overflow: hidden;" id='map'>
       ${map}

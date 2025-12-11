@@ -31,14 +31,14 @@ export function stripHtml(element) {
 }
 
 /**
- * @typedef {Object} Event
+ * @typedef {Object} HistEvent
  * @property {number} year
  * @property {string} description
  */
 
 /**
  * @param {string} searchTerms A search phrase
- * @returns {(e: Event) => boolean} A predicate that checks if the event matches search terms.
+ * @returns {(e: HistEvent) => boolean} A predicate that checks if the event matches search terms.
  */
 export function filterTest(searchTerms) {
   const lowerSearch = searchTerms.toLowerCase();

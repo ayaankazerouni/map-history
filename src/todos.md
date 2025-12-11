@@ -1,14 +1,13 @@
 # TO-DO
 
-- [ ] Draw only a land basemap if no events are selected
-- [ ] If an event is chosen in the table, draw it on the map
-- [ ] When an event is chosen, snap to the closest basemap year (update the slider)
-- [ ] Only colour in the boundary that contains the event
-- [ ] Show the other boundaries with lower opacity, coloured in when hovered
+- Unset the event selection if the year slider is changed manually. Need to figure out a way to know if the slider was changed programmatically due to an event selection, or manually by the user. In the latter case, we want to reset the search and table values.
+- ~~If an event is chosen in the table, draw it on the map~~
+- ~~When an event is chosen, snap to the closest basemap year (update the slider)~~
+- ~~Only colour in the boundary that contains the event~~
 
 ## Refactor event data
 
-Events don't only occur on single days.
+Events don't only occur on single days or in single places.
 So the longer term plan is to have an event database where events are GeoJSON features with start and end dates.
 Then we can draw events with larger spatial and temporal spans.
 
