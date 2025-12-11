@@ -8,8 +8,8 @@ toc: false
 
 ```js
 // Load components
-import { worldMap, getGeoData } from "./components/map.js"
-import { stripHtml, filterTest } from './components/lib.js'
+import { worldMap } from "./components/map.js"
+import { stripHtml, filterTest, getGeoData } from './components/lib.js'
 ```
 
 ```js
@@ -42,13 +42,7 @@ const yearIndex = Generators.input(yearIndexInput);
 ```
 
 ```js
-// const searchTermsInput = Inputs.text({
-//   label: 'Events containing the word or phrase',
-//   placeholder: 'e.g., Gandhi',
-//   width: 500,
-// })
-// searchTermsInput.querySelector('label').style.setProperty('display', 'none');
-// const searchTerms = Generators.input(searchTermsInput);
+// Search input for events data
 const searchInput = Inputs.search(events,
   {
     width: 500,
@@ -60,6 +54,7 @@ const searchResult = Generators.input(searchInput);
 ```
 
 ```js
+// A table input showing filtered events based on search input
 const filteredEventsTable = Inputs.table(
   searchResult.map(d => ({
     Year: String(d.year),
@@ -97,7 +92,7 @@ const map = await worldMap(geodata, width, dark);
         <small>Show historical borders for the given year.</small>
       </div>
       <div style="overflow: hidden;" id='map'>
-      ${display(map)}
+      ${map}
       </div>
     </div>
   </div>
