@@ -8,55 +8,57 @@ toc: false
 
 ```js
 // Load components
-import { worldMap } from "./components/map.js"
-import { stripHtml, filterTest, getGeoData } from './components/lib.js'
+import { worldMap } from "./components/map.js";
+import {
+  stripHtml,
+  filterTest,
+  getGeoData,
+  getClosestTimePeriod,
+} from "./components/lib.js";
 ```
 
 ```js
 // Load data
-const events = await FileAttachment('data/events.json').json();
-const basemaps = (await FileAttachment('data/time-periods.json').json()).years;
+const events = await FileAttachment("data/events.json").json();
+const basemaps = (await FileAttachment("data/time-periods.json").json()).years;
+const timePeriods = basemaps.map(d => d.year);
 ```
 
 <!--Reactive variables -->
+
 ```js
 const dark = Generators.dark();
-const width = Generators.width(document.querySelector('#map'));
+const width = Generators.width(document.querySelector("#map"));
 ```
 
 ```js
-const years = basemaps.map(d => d.year);
-const yearIndexInput = Inputs.range(
-  [0, years.length - 1],
-  {
-    step: 1,
-    label: 'Year',
-    value: years.length - 1,
-    format: i => years[i],
-    width: 350 
-  }
-);
+const yearIndexInput = Inputs.range([0, timePeriods.length - 1], {
+  step: 1,
+  label: "Year",
+  value: timePeriods.length - 1,
+  format: (i) => timePeriods[i],
+  width: 350,
+});
 yearIndexInput.querySelector("input[type=number]").remove();
-yearIndexInput.querySelector('label').style.setProperty('display', 'none');
+yearIndexInput.querySelector("label").style.setProperty("display", "none");
 const yearIndex = Generators.input(yearIndexInput);
 ```
 
 ```js
 // Search input for events data
-const searchInput = Inputs.search(events,
-  {
-    width: 500,
-    placeholder: "Search events...",
-    required: false,
-    filter: filterTest
-  });
+const searchInput = Inputs.search(events, {
+  width: 500,
+  placeholder: "Search events...",
+  required: false,
+  filter: filterTest,
+});
 const searchResult = Generators.input(searchInput);
 ```
 
 ```js
 // A table input showing filtered events based on search input
 const filteredEventsTable = Inputs.table(
-  searchResult.map(d => ({
+  searchResult.map((d) => ({
     Year: String(d.year),
     Description: d.description,
   })),
@@ -67,14 +69,26 @@ const filteredEventsTable = Inputs.table(
     height: 1000,
     required: false,
     select: true,
-    multiple: false
-  }
+    multiple: false,
+  },
 );
-const chosenEvents = Generators.input(filteredEventsTable);
+const chosenEvent = Generators.input(filteredEventsTable);
 ```
 
 ```js
-const yearInput = years[yearIndex];
+const chosenEventYear = chosenEvent?.Year;
+if (chosenEventYear !== undefined) {
+  const closestTimePeriod = getClosestTimePeriod(
+    +chosenEventYear,
+    timePeriods
+  );
+  yearIndexInput.value = timePeriods.indexOf(closestTimePeriod);
+  yearIndexInput.dispatchEvent(new Event("input"));
+}
+```
+
+```js
+const yearInput = timePeriods[yearIndex];
 const currentBasemap = basemaps[yearIndex];
 const geodata = getGeoData(currentBasemap.filename);
 ```

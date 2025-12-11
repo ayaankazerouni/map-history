@@ -1,4 +1,5 @@
-import * as d3 from 'd3';
+import * as d3 from "d3";
+import { FileAttachment } from "observablehq:stdlib";
 
 /**
  * Get color based on key and dark mode. Dark mode is typically set from
@@ -8,15 +9,15 @@ import * as d3 from 'd3';
  * @param {boolean} dark A reactive variable indicating dark mode.
  * @returns {string}
  */
-function getColor(key, dark=false) {
+function getColor(key, dark = false) {
   return {
-    landFill: 'none',
-    landStroke: dark ? 'white' : 'black',
-    seaFill: dark ? 'steelblue' : 'lightblue',
-    pointFill: dark ? 'white' : 'darkgrey',
-    pointStroke: dark ? 'black' : 'white',
-    tooltipBg: dark ? 'darkslategrey' : 'ivory',
-    tooltipFg: dark ? 'ivory' : 'darkslategrey'
+    landFill: "none",
+    landStroke: dark ? "white" : "black",
+    seaFill: dark ? "steelblue" : "lightblue",
+    pointFill: dark ? "white" : "darkgrey",
+    pointStroke: dark ? "black" : "white",
+    tooltipBg: dark ? "darkslategrey" : "ivory",
+    tooltipFg: dark ? "ivory" : "darkslategrey",
   }[key];
 }
 
@@ -25,7 +26,13 @@ const tooltip = getTooltipElement();
 // Store the last transform to maintain zoom state between redraws.
 let lastTransform = d3.zoomIdentity;
 
-export async function worldMap(geodata, width=1000, dark=false) {
+/**
+ * @param {FileAttachment} geodata A FileAttachment containing GeoJSON data.
+ * @param {number} width Default 1000
+ * @param {number} dark Default false
+ * @returns
+ */
+export async function worldMap(geodata, width = 1000, dark = false) {
   // If geodata is a FileAttachment, await its JSON
   if (geodata?.json) {
     geodata = await geodata.json();
@@ -36,144 +43,158 @@ export async function worldMap(geodata, width=1000, dark=false) {
 
   // Create projection with responsive scale
   const padding = 20;
-  const projection = d3.geoNaturalEarth1()
-    .fitExtent([[padding, padding], [width - padding, height - padding]], geodata);
+  const projection = d3.geoNaturalEarth1().fitExtent(
+    [
+      [padding, padding],
+      [width - padding, height - padding],
+    ],
+    geodata,
+  );
 
-  const zoom = d3.zoom()
+  const zoom = d3
+    .zoom()
     .scaleExtent([1, 8])
-    .translateExtent([[-100, -100], [width + 100, height + 100]])
-    .wheelDelta(event => -event.deltaY * 0.00085)
-    .on('zoom', zoomed);
+    .translateExtent([
+      [-100, -100],
+      [width + 100, height + 100],
+    ])
+    .wheelDelta((event) => -event.deltaY * 0.00085)
+    .on("zoom", zoomed);
 
-  const container = d3.create('svg')
-    .attr('width', width)
-    .attr('height', height);
+  const container = d3
+    .create("svg")
+    .attr("width", width)
+    .attr("height", height);
 
   // Stick everything in a group so everything zooms together.
-  const g = container.append('g');
+  const g = container.append("g");
 
   const path = d3.geoPath(projection);
-  const sphere = ({ type: 'Sphere' });
+  const sphere = { type: "Sphere" };
 
-  g.append('path')
+  g.append("path")
     .datum(sphere)
-    .attr('fill', getColor('seaFill', dark))
-    .attr('stroke', 'black')
-    .attr('stroke-width', 1.5)
-    .attr('d', path);
+    .attr("fill", getColor("seaFill", dark))
+    .attr("stroke", "black")
+    .attr("stroke-width", 1.5)
+    .attr("d", path);
 
-  const land = g.append('g')
-    .selectAll('path')
-    .data(geodata.features)
+  const land = g.append("g").selectAll("path").data(geodata.features);
 
   function drawLand(landContainer) {
-    landContainer.join('path')
-      .attr('d', path)
-      .attr('fill', d => getName(d) ? 'lightgrey' : 'darkgrey')
-      .attr('stroke', 'black')
-      .attr('stroke-width', 0.8)
-      .attr('stroke-opacity', d => getName(d) ? 0.3 : 0.8)
-      .on('mouseover', (_, d) => {
+    landContainer
+      .join("path")
+      .attr("d", path)
+      .attr("fill", (d) => (getName(d) ? "lightgrey" : "darkgrey"))
+      .attr("stroke", "black")
+      .attr("stroke-width", 0.8)
+      .attr("stroke-opacity", (d) => (getName(d) ? 0.3 : 0.8))
+      .on("mouseover", (_, d) => {
         const name = getName(d);
         if (name !== null) {
-          tooltip
-            .html(`${name}`)
-            .style('visibility', 'visible');
+          tooltip.html(`${name}`).style("visibility", "visible");
         }
       })
-      .on('mousemove', (event) => {
+      .on("mousemove", (event) => {
         tooltip
-          .style('top', (event.pageY + 10) + 'px')
-          .style('left', (event.pageX + 10) + 'px');
+          .style("top", event.pageY + 10 + "px")
+          .style("left", event.pageX + 10 + "px");
       })
-      .on('mouseout', () => {
-        tooltip.style('visibility', 'hidden');
+      .on("mouseout", () => {
+        tooltip.style("visibility", "hidden");
       });
   }
 
-  land.call(drawLand)
+  land.call(drawLand);
 
-  g.on('dblclick', resetZoom);
+  g.on("dblclick", resetZoom);
 
-  const dots = g.append('g');
+  const dots = g.append("g");
 
   function resetZoom(event) {
     event.preventDefault();
     event.stopPropagation();
     lastTransform = d3.zoomIdentity;
-    container.transition()
-      .duration(750)
-      .call(zoom.transform, d3.zoomIdentity);
+    container.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
   }
 
   function zoomed({ transform }) {
-    g.attr('transform', transform);
+    g.attr("transform", transform);
     lastTransform = transform;
   }
 
   container.call(zoom); // Make it zoomable
   container.call(zoom.transform, lastTransform); // Restore last transform
 
-  return Object.assign(
-    container.node(), {
-      update: (data) => {
-        dots.selectAll('circle')
-          .data(data, d => `${d.year}-${d.longitude}-${d.latitude}-${d.description}`)
-          .join(
-            enter => enter.append('circle')
-              .attr('fill', getColor('pointFill', dark))
-              .attr('stroke', getColor('pointStroke', dark))
-              .attr('r', 3)
-              .attr('transform', d => `translate(${projection([d.longitude, d.latitude])})`)
-              .on('mouseover', (_, d) => {
-                const bce = d.year < 0 ? 'BCE' : 'CE';
+  return Object.assign(container.node(), {
+    update: (data) => {
+      dots
+        .selectAll("circle")
+        .data(
+          data,
+          (d) => `${d.year}-${d.longitude}-${d.latitude}-${d.description}`,
+        )
+        .join(
+          (enter) =>
+            enter
+              .append("circle")
+              .attr("fill", getColor("pointFill", dark))
+              .attr("stroke", getColor("pointStroke", dark))
+              .attr("r", 3)
+              .attr(
+                "transform",
+                (d) => `translate(${projection([d.longitude, d.latitude])})`,
+              )
+              .on("mouseover", (_, d) => {
+                const bce = d.year < 0 ? "BCE" : "CE";
                 const date = `${d.month} ${d.day}, ${Math.abs(d.year)} ${bce}`;
                 tooltip
                   .html(`<strong>${date}</strong><br/>${d.description}`)
-                  .style('visibility', 'visible');
+                  .style("visibility", "visible");
               })
-              .on('mousemove', (event) => {
+              .on("mousemove", (event) => {
                 tooltip
-                  .style('top', (event.pageY + 10) + 'px')
-                  .style('left', (event.pageX + 10) + 'px');
+                  .style("top", event.pageY + 10 + "px")
+                  .style("left", event.pageX + 10 + "px");
               })
-              .on('mouseout', () => {
-                tooltip.style('visibility', 'hidden');
+              .on("mouseout", () => {
+                tooltip.style("visibility", "hidden");
               }),
-            update => update,
-            exit => exit.remove()
-          )
-      }
-    }
-  );
+          (update) => update,
+          (exit) => exit.remove(),
+        );
+    },
+  });
 }
 
 function getName(d) {
   const { NAME, SUBJECTO } = d.properties;
-  if (NAME === null || NAME === 'unclaimed') {
+  if (NAME === null || NAME === "unclaimed") {
     return null;
   } else if (NAME === SUBJECTO) {
     return NAME;
   } else {
-    return `${NAME}\t${SUBJECTO}`
+    return `${NAME}\t${SUBJECTO}`;
   }
 }
 
-function getTooltipElement(dark=false) {
-  const tooltip = d3.select('body').append('div')
-    .style('position', 'absolute')
-    .style('visibility', 'hidden')
-    .style('background-color', getColor('tooltipBg', dark))
-    .style('border', '1px solid #ddd')
-    .style('border-radius', '4px')
-    .style('padding', '8px')
-    .style('font-size', '14px')
-    .style('font-family', 'Avenir, sans-serif')
-    .style('color', getColor('tooltipFg', dark))
-    .style('box-shadow', '0 2px 4px rgba(0,0,0,0.1)')
-    .style('pointer-events', 'none')
-    .style('z-index', '1000')
-    .style('max-width', '300px');
+function getTooltipElement(dark = false) {
+  const tooltip = d3
+    .select("body")
+    .append("div")
+    .style("position", "absolute")
+    .style("visibility", "hidden")
+    .style("background-color", getColor("tooltipBg", dark))
+    .style("border", "1px solid #ddd")
+    .style("border-radius", "4px")
+    .style("padding", "8px")
+    .style("font-size", "14px")
+    .style("font-family", "Avenir, sans-serif")
+    .style("color", getColor("tooltipFg", dark))
+    .style("box-shadow", "0 2px 4px rgba(0,0,0,0.1)")
+    .style("pointer-events", "none")
+    .style("z-index", "1000")
+    .style("max-width", "300px");
 
   return tooltip;
 }

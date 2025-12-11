@@ -50,6 +50,8 @@ export function filterTest(searchTerms) {
   };
 }
 
+// FileAttachment requires a string literal for static analysis,
+// so we need to map filenames to FileAttachment objects manually.
 const BASEMAPS = {
   "world_bc123000.geojson": FileAttachment("../data/historical-basemaps/world_bc123000.geojson"),
   "world_bc10000.geojson": FileAttachment("../data/historical-basemaps/world_bc10000.geojson"),
@@ -106,29 +108,25 @@ const BASEMAPS = {
   "world_2010.geojson": FileAttachment("../data/historical-basemaps/world_2010.geojson")
 };
 
-const years = await (FileAttachment('../data/time-periods.json').json()).years
-  .map(t => t.year);
-
 /**
+ * Get the time period closest to the specified year.
  *
  * @param {number} year
  * @param {number[]} years A list of available time periods.
  * @returns {number} The closest time period to the specified year.
  */
-export function getClosestTimePeriod(year, years=years) {
+export function getClosestTimePeriod(year, years) {
   return years.reduce((a, b) => {
     return Math.abs(b - year) < Math.abs(a - year) ? b : a;
   })
 }
 
 /**
- * Retrieve GeoJSON data for a given historical basemap filename.
+ * Get the GeoJSON data for a given historical basemap filename.
  *
  * @param {string} filename
  * @returns {FileAttachment} The corresponding FileAttachment for the GeoJSON data.
  */
 export function getGeoData(filename) {
-  // FileAttachment requires a string literal for static analysis,
-  // so we need to map filenames to FileAttachment objects manually.
   return BASEMAPS[filename];
 }
