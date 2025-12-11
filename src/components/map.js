@@ -1,27 +1,24 @@
 import * as d3 from 'd3';
 import {FileAttachment} from "observablehq:stdlib";
 
-const IS_DARK = window.matchMedia('(prefers-color-scheme: dark)').matches;
-const COLORS = {
-  landFill: 'none',
-  landStroke: IS_DARK ? 'white' : 'black',
-  pointFill: 'white',
-  pointStroke: 'black',
-  tooltipBg: IS_DARK ? 'darkslategrey' : 'ivory',
-  tooltipFg: IS_DARK ? 'ivory' : 'graphite'
+
+function getColor(key, dark=false) {
+  return {
+    landFill: 'none',
+    landStroke: dark ? 'white' : 'black',
+    seaFill: dark ? 'steelblue' : 'lightblue',
+    pointFill: dark ? 'white' : 'darkgrey',
+    pointStroke: dark ? 'black' : 'white',
+    tooltipBg: dark ? 'darkslategrey' : 'ivory',
+    tooltipFg: dark ? 'ivory' : 'darkslategrey'
+  }[key];
 }
 
-// Create consistent color scale based on all countries across all years
-const timePeriods = await FileAttachment("../data/time-periods.json").json();
-const allCountries = [...new Set(
-  timePeriods.years.flatMap(y => y.countries)
-)].sort();
+const tooltip = getTooltipElement();
 
-const COLOR_SCALE = d3.scaleOrdinal()
-  .domain(allCountries)
-  .range(d3.quantize(d3.interpolateCubehelixDefault, allCountries.length));
+let lastTransform = d3.zoomIdentity;
 
-export async function worldMap(geodata, width=1000) {
+export async function worldMap(geodata, width=1000, dark=false) {
 
   // If geodata is a FileAttachment, await its JSON
   if (geodata?.json) {
@@ -30,15 +27,14 @@ export async function worldMap(geodata, width=1000) {
 
   // Calculate responsive dimensions
   const height = width * 0.6; // Maintain aspect ratio
-  const scale = width / 6.5; // Scale based on width
 
   // Create projection with responsive scale
+  const padding = 20;
   const projection = d3.geoNaturalEarth1()
-    .scale(scale)
-    .translate([width / 2, height / 2]);
+    .fitExtent([[padding, padding], [width - padding, height - padding]], geodata);
 
   const zoom = d3.zoom()
-    .scaleExtent([0.8, 8])
+    .scaleExtent([1, 8])
     .translateExtent([[-100, -100], [width + 100, height + 100]])
     .wheelDelta(event => -event.deltaY * 0.00085)
     .on('zoom', zoomed);
@@ -52,13 +48,9 @@ export async function worldMap(geodata, width=1000) {
   const path = d3.geoPath(projection);
   const sphere = ({ type: 'Sphere' });
 
-  // Reusable tooltip div
-  const tooltip = getTooltipElement();
-  const landTooltip = getTooltipElement();
-
   g.append('path')
     .datum(sphere)
-    .attr('fill', 'lightblue')
+    .attr('fill', getColor('seaFill', dark))
     .attr('stroke', 'black')
     .attr('stroke-width', 1.5)
     .attr('d', path);
@@ -67,66 +59,60 @@ export async function worldMap(geodata, width=1000) {
     .selectAll('path')
     .data(geodata.features)
     .join('path')
-      .attr('fill', d => {
-        const name = d.properties.SUBJECTO || d.properties.NAME;
-        if (name === 'Antarctica' || name === null || name === 'unclaimed') {
-          return 'lightgrey';
-        } else {
-          return COLOR_SCALE(name);
-        }
-      })
-      .attr('stroke', d => {
-        const name = d.properties.SUBJECTO || d.properties.NAME;
-        if (name === null || name === 'unclaimed') {
-          return 'lightgrey';
-        }
-        return COLORS.landStroke;
-      })
-      .attr('stroke-opacity', d => {
-        const name = d.properties.SUBJECTO || d.properties.NAME;
-        if (name === null || name === 'unclaimed') {
-          return 0.3;
-        }
-        return 0.8;
-      })
+      .attr('fill', d => getName(d) ? 'lightgrey' : 'darkgrey')
+      .attr('stroke', 'black')
+      .attr('stroke-width', 0.8)
+      .attr('stroke-opacity', d => getName(d) ? 0.3 : 0.8)
       .attr('d', path)
       .on('mouseover', (_, d) => {
-        const subjecto = d.properties.SUBJECTO;
-        const name = d.properties.NAME;
-        const content =  name === subjecto ? name :
-          name || subjecto;
-        if (content) {
-          landTooltip
-            .html(`${content}`)
+        const name = getName(d);
+        if (name !== null) {
+          tooltip
+            .html(`${name}`)
             .style('visibility', 'visible');
         }
       })
       .on('mousemove', (event) => {
-        landTooltip
+        tooltip
           .style('top', (event.pageY + 10) + 'px')
           .style('left', (event.pageX + 10) + 'px');
       })
       .on('mouseout', () => {
-        landTooltip.style('visibility', 'hidden');
+        tooltip.style('visibility', 'hidden');
       });
+
+  g.on('dblclick', resetZoom);
 
   const dots = g.append('g');
 
-  function zoomed({ transform }) {
-    g.attr('transform', transform);
+  function resetZoom(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    lastTransform = d3.zoomIdentity;
+    container.transition()
+      .duration(750)
+      .call(zoom.transform, d3.zoomIdentity);
   }
 
-  container.call(zoom);
+  function zoomed({ transform }) {
+    g.attr('transform', transform);
+    lastTransform = transform;
+  }
+
+  container.call(zoom); // Make it zoomable
+  container.call(zoom.transform, lastTransform); // Restore last transform
 
   return Object.assign(
     container.node(), {
+      getTransform: () => d3.zoomTransform(container.node()),
+      setTransform: (transform) => container.call(zoom.transform, transform),
       update: (data) => {
         dots.selectAll('circle')
           .data(data, d => `${d.year}-${d.longitude}-${d.latitude}-${d.description}`)
           .join(
             enter => enter.append('circle')
-              .attr('fill', COLORS.pointFill)
-              .attr('stroke', COLORS.pointStroke)
+              .attr('fill', getColor('pointFill', dark))
+              .attr('stroke', getColor('pointStroke', dark))
               .attr('r', 3)
               .attr('transform', d => `translate(${projection([d.longitude, d.latitude])})`)
               .on('mouseover', (_, d) => {
@@ -143,24 +129,37 @@ export async function worldMap(geodata, width=1000) {
               })
               .on('mouseout', () => {
                 tooltip.style('visibility', 'hidden');
-              })
+              }),
+            update => update,
+            exit => exit.remove()
           )
       }
     }
   );
 }
 
-function getTooltipElement() {
+function getName(d) {
+  const { NAME, SUBJECTO } = d.properties;
+  if (NAME === null || NAME === 'unclaimed') {
+    return null;
+  } else if (NAME === SUBJECTO) {
+    return NAME;
+  } else {
+    return `${NAME}\t${SUBJECTO}`
+  }
+}
+
+function getTooltipElement(dark=false) {
   const tooltip = d3.select('body').append('div')
     .style('position', 'absolute')
     .style('visibility', 'hidden')
-    .style('background-color', COLORS.tooltipBg)
+    .style('background-color', getColor('tooltipBg', dark))
     .style('border', '1px solid #ddd')
     .style('border-radius', '4px')
     .style('padding', '8px')
     .style('font-size', '14px')
     .style('font-family', 'Avenir, sans-serif')
-    .style('color', COLORS.tooltipFg)
+    .style('color', getColor('tooltipFg', dark))
     .style('box-shadow', '0 2px 4px rgba(0,0,0,0.1)')
     .style('pointer-events', 'none')
     .style('z-index', '1000')

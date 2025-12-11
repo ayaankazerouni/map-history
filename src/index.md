@@ -18,6 +18,12 @@ const events = await FileAttachment('data/events.json').json();
 const basemaps = (await FileAttachment('data/time-periods.json').json()).years;
 ```
 
+<!--Reactive variables -->
+```js
+const dark = Generators.dark();
+const width = Generators.width(document.querySelector('#map'));
+```
+
 ```js
 const years = basemaps.map(d => d.year);
 const yearIndexInput = Inputs.range(
@@ -79,11 +85,7 @@ const geodata = getGeoData(currentBasemap.filename);
 ```
 
 ```js
-const width = await Generators.width(document.querySelector('#map'));
-```
-
-```js
-const map = await worldMap(geodata, width);
+const map = await worldMap(geodata, width, dark);
 ```
 
 <div class="grid grid-cols-3">
