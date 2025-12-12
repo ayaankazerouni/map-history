@@ -5,3 +5,10 @@ input[type='search'], input[type='text'] {
   border-radius: 4px;
   font-size: 16px;
 }
+
+blockquote {
+  border-left: var(--theme-foreground-alt) 3pt solid;
+  border-radius: 3px;
+  padding-left: 20px;
+  color: var(--theme-foreground-alt);
+}
