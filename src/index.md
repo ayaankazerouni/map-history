@@ -96,7 +96,8 @@ if (chosenEventYear !== undefined) {
 ```js
 const yearInput = timePeriods[yearIndex];
 const currentBasemap = basemaps[yearIndex];
-const geodata = getGeoData(currentBasemap.filename);
+const basemapFilename = currentBasemap.filename.replace('geojson', 'json');
+const geodata = getGeoData(basemapFilename);
 ```
 
 ```js

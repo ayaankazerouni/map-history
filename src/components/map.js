@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import { FileAttachment } from "observablehq:stdlib";
+import * as topojson from "topojson-client";
 
 /** @type {import('./lib.js').HistEvent} */
 
@@ -48,6 +49,8 @@ export async function worldMap(
     geodata = await geodata.json();
   }
 
+  const topodata = topojson.feature(geodata, geodata.objects.regions);
+
   // Calculate responsive dimensions
   const height = width * 0.6; // Maintain aspect ratio
 
@@ -58,7 +61,7 @@ export async function worldMap(
       [padding, padding],
       [width - padding, height - padding],
     ],
-    geodata,
+    topodata
   );
 
   const zoom = d3
@@ -89,7 +92,10 @@ export async function worldMap(
     .attr("stroke-width", 1.5)
     .attr("d", path);
 
-  const land = g.append("g").selectAll("path").data(geodata.features);
+  const land = g
+    .append("g")
+    .selectAll("path")
+    .data(topodata.features);
 
   function drawLand(landContainer) {
     const containsChosenEvent = (d) => {
@@ -132,9 +138,10 @@ export async function worldMap(
   const dots = g.append("g");
 
   if (chosenEvent) {
-    dots.selectAll('circle')
+    dots
+      .selectAll("circle")
       .data([chosenEvent])
-      .join('circle')
+      .join("circle")
       .attr("fill", getColor("pointFill", dark))
       .attr("stroke", getColor("pointStroke", dark))
       .attr("r", 3)

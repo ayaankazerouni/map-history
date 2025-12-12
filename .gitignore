@@ -8,3 +8,5 @@ testing.ipynb
 
 dist
 src/.observablehq
+
+tmp/
