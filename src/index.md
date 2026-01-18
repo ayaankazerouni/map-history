@@ -76,6 +76,7 @@ const filteredEventsTable = Inputs.table(
     required: false,
     select: true,
     multiple: false,
+    sort: "year"
   },
 );
 const chosenEvent = Generators.input(filteredEventsTable);
@@ -112,8 +113,8 @@ const map = await worldMap(geodata, width, dark, chosenEvent);
         <span style='font-size: 1.2em'>Selected year: ${yearToString(yearInput)}</span>
         ${yearIndexInput} 
         <small>
-          Showing historical borders for the chosen year.<br>
-          See <a href="https://github.com/aourednik/historical-basemaps"><code>aourednik/historical-basemaps</code>.</a>
+          Showing historical borders for the chosen year. (<a href="https://github.com/aourednik/historical-basemaps">Source</a>)<br>
+          <a href="/about#a-note-about-colours">A note about colours.</a>
         </small>
       </div>
       <div style="overflow: hidden;" id='map'>

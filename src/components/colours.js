@@ -108,7 +108,9 @@ export function getRegionColour(feature, unclaimedColour = "lightgrey") {
 
   // Some region's SUBJECTO fields are inconsistent. Normalise them first.
   const normalisedKey = key === "United Kingdom of Great Britain and Ireland" ?
-    "United Kingdom" : key;
+    "United Kingdom" :
+    key === "United States" ? "United States of America" :
+    key;
 
   return getColourByName(normalisedKey);
 }
