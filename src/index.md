@@ -14,6 +14,7 @@ import {
   filterTest,
   getGeoData,
   getClosestTimePeriod,
+  yearToString
 } from "./components/lib.js";
 ```
 
@@ -69,7 +70,7 @@ const filteredEventsTable = Inputs.table(
       description: 'Description'
     },
     width: {
-      year: 40,
+      year: 80,
     },
     height: 1000,
     required: false,
@@ -108,7 +109,7 @@ const map = await worldMap(geodata, width, dark, chosenEvent);
   <div class="card grid-colspan-2">
     <div>
       <div style="display: flex; flex-flow: column; align-items: center;">
-        <span style='font-size: 1.2em'>Selected year: ${yearInput}</span>
+        <span style='font-size: 1.2em'>Selected year: ${yearToString(yearInput)}</span>
         ${yearIndexInput} 
         <small>
           Showing historical borders for the chosen year.<br>

@@ -122,6 +122,17 @@ export function getClosestTimePeriod(year, years) {
 }
 
 /**
+ * Get the year as a string.
+ * @param {number} year
+ * @returns {string} A string representation of the year. For example:
+ *  4 => "4 CE"
+ *  -1 => "1 BCE"
+ */
+export function yearToString(year) {
+  return year < 0 ? `${Math.abs(year)} BCE` : `${year} CE`;
+}
+
+/**
  * Get the GeoJSON data for a given historical basemap filename.
  *
  * @param {string} filename

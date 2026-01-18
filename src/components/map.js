@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import { FileAttachment } from "observablehq:stdlib";
 import * as topojson from "topojson-client";
+import { getRegionColour } from "./colours.js";
 
 /** @type {import('./lib.js').HistEvent} */
 
@@ -8,7 +9,15 @@ import * as topojson from "topojson-client";
  * Get color based on key and dark mode. Dark mode is typically set from
  * an Observable reactive variable.
  *
- * @param { 'landFill' | 'unclaimedFill' | 'landStroke' | 'landHighlight' | 'seaFill' | 'pointFill' | 'pointStroke' | 'tooltipBg' | 'tooltipFg'} key
+ * @param {'landFill'
+ *   | 'unclaimedFill'
+ *   | 'landStroke'
+ *   | 'landHighlight'
+ *   | 'seaFill'
+ *   | 'pointFill'
+ *   | 'pointStroke'
+ *   | 'tooltipBg'
+ *   | 'tooltipFg'} key
  * @param {boolean} dark A reactive variable indicating dark mode.
  * @returns {string}
  */
@@ -50,6 +59,7 @@ export async function worldMap(
   }
 
   const topodata = topojson.feature(geodata, geodata.objects.regions);
+  const sphere = { type: "Sphere" };
 
   // Calculate responsive dimensions
   const height = width * 0.6; // Maintain aspect ratio
@@ -61,7 +71,7 @@ export async function worldMap(
       [padding, padding],
       [width - padding, height - padding],
     ],
-    topodata
+    sphere,
   );
 
   const zoom = d3
@@ -83,7 +93,6 @@ export async function worldMap(
   const g = container.append("g");
 
   const path = d3.geoPath(projection);
-  const sphere = { type: "Sphere" };
 
   g.append("path")
     .datum(sphere)
@@ -92,8 +101,7 @@ export async function worldMap(
     .attr("stroke-width", 1.5)
     .attr("d", path);
 
-  const land = g
-    .append("g")
+  const land = g.append("g")
     .selectAll("path")
     .data(topodata.features);
 
@@ -110,7 +118,7 @@ export async function worldMap(
       .attr("fill", (d) =>
         containsChosenEvent(d)
           ? getColor("landHighlight", dark)
-          : getColor(getName(d) ? "landFill" : "unclaimedFill", dark),
+          : getRegionColour(d)
       )
       .attr("stroke", "black")
       .attr("stroke-width", (d) => (containsChosenEvent(d) ? 2.5 : 1.5))
@@ -185,18 +193,35 @@ export async function worldMap(
 }
 
 /**
- * @param {{ properties: { NAME: string, SUBJECTO: string } }} d A GeoJSON feature
+ * @typedef {Object} Region
+ * @property {string} NAME
+ * @property {string} SUBJECTO
+ * @property {string} PARTOF
+ */
+/**
+ * @param {Region} d A GeoJSON feature
  * @returns { string | null }
  */
 function getName(d) {
-  const { NAME, SUBJECTO } = d.properties;
+  const { NAME, SUBJECTO, PARTOF } = d.properties;
+
   if (NAME === null || NAME === "unclaimed") {
     return null;
-  } else if (NAME === SUBJECTO) {
-    return NAME;
-  } else {
-    return `${NAME}\t${SUBJECTO}`;
   }
+
+  const subjectoDiffers = SUBJECTO && SUBJECTO !== NAME;
+  const partofDiffers = PARTOF && PARTOF !== NAME;
+
+  if (!subjectoDiffers && !partofDiffers) {
+    return NAME;
+  }
+
+  if (subjectoDiffers && partofDiffers && SUBJECTO !== PARTOF) {
+    return `${NAME} (${SUBJECTO}, ${PARTOF})`;
+  }
+
+  const qualifier = subjectoDiffers ? SUBJECTO : PARTOF;
+  return `${NAME} (${qualifier})`;
 }
 
 /**
