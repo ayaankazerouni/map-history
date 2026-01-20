@@ -10,6 +10,8 @@ theme: ['slate', 'wide']
 Just for fun, a little project to help visualize contemporaneous events in history.
 [Here's the code.](https://github.com/ayaankazerouni/map-history)
 
+Also see [https://runningreality.org](runningreality.org), a far more complete project with similar goals.
+
 ## The data
 
 The map shows two types of data, each with its own caveats:
@@ -43,6 +45,6 @@ For example, in 2010 CE, Australia and Canada are both light blue.
 
 - Add fuzziness for uncertain borders.
 - Refactor event data.
-  - Events don't only occur on single days or in single places. So the longer term plan is to have an event database that allows GeoJSON features with start and end dates. Then we can draw events with larger spatial and temporal spans.
-  - So the idea is: if someone searches for the an event that's not necessarily on one day, or in one place, like "the Rennaissance". We can search for _other_ events that overlapped with the Rennaissance temporally, and show those events on the map as well. Those events might be regions or points, and might span single days or longer time periods.
-- Explore the [Human History](https://en.wikipedia.org/wiki/Human_history) Wikipedia page.
+  - Wikipedia "on this day" events are a poor description of "history". Events don't only occur on single days or in single places, and more recent "events" tend to be more like newspaper headlines than major geopolitical events.
+  - ~~So the longer term plan is to have an event database that allows GeoJSON features with start and end dates. Then we can draw events with larger spatial and temporal spans.
+  - So the idea is: if someone searches for the an event that's not necessarily on one day, or in one place, like "the Rennaissance". We can search for _other_ events that overlapped with the Rennaissance temporally, and show those events on the map as well. Those events might be regions or points, and might span single days or longer time periods.~~ Just look at [runningreality.org](https://runningreality.org).
